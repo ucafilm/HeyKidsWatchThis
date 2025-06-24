@@ -1,0 +1,40 @@
+// MovieServiceProtocol.swift
+// HeyKidsWatchThis - Phase 2: Service Layer Protocol
+// Protocol-driven architecture following 2025 Swift best practices
+
+import Foundation
+
+/// Protocol defining movie service operations for dependency injection
+protocol MovieServiceProtocol {
+    // MARK: - Core Movie Operations
+    func getAllMovies() -> [MovieData]
+    func getMovies(for ageGroup: AgeGroup) -> [MovieData]
+    func searchMovies(query: String) -> [MovieData]
+    func getMovie(by id: UUID) -> MovieData?
+    
+    // MARK: - Watchlist Operations
+    var watchlist: [UUID] { get }
+    func addToWatchlist(_ movieId: UUID)
+    func removeFromWatchlist(_ movieId: UUID)
+    func isInWatchlist(_ movieId: UUID) -> Bool
+    func getWatchlistMovies() -> [MovieData]
+    
+    // MARK: - Watched Movies Tracking
+    func markAsWatched(_ movieId: UUID, date: Date)
+    func getWatchedMovies() -> [MovieData]
+    func isWatched(_ movieId: UUID) -> Bool
+    
+    // MARK: - Filtering and Sorting
+    func getMoviesByGenre(_ genre: String) -> [MovieData]
+    func getMoviesByStreamingService(_ streamingService: String) -> [MovieData]
+    func getMoviesSorted(by criteria: MovieSortCriteria) -> [MovieData]
+}
+
+/// Sorting criteria for movie lists
+enum MovieSortCriteria {
+    case title
+    case year
+    case rating
+    case dateAdded
+    case alphabetical
+}

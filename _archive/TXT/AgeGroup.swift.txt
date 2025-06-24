@@ -1,0 +1,35 @@
+import Foundation
+
+enum AgeGroup: String, CaseIterable, Codable, CustomStringConvertible {
+    case preschoolers = "preschoolers"
+    case littleKids = "littleKids"
+    case bigKids = "bigKids"
+    case tweens = "tweens"
+    
+    var emoji: String {
+        switch self {
+        case .preschoolers: return "🧸"
+        case .littleKids: return "🎨"
+        case .bigKids: return "🚀"
+        case .tweens: return "🎭"
+        }
+    }
+    
+    var ageRange: String {
+        switch self {
+        case .preschoolers: return "2-4"
+        case .littleKids: return "5-7"
+        case .bigKids: return "8-9"
+        case .tweens: return "10-12"
+        }
+    }
+    
+    var description: String {
+        switch self {
+        case .preschoolers: return "Preschoolers"
+        case .littleKids: return "Little Kids"
+        case .bigKids: return "Big Kids"
+        case .tweens: return "Tweens"
+        }
+    }
+}

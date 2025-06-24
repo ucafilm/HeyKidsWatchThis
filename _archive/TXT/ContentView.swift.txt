@@ -1,0 +1,223 @@
+// ContentView.swift
+// HeyKidsWatchThis - FIXED Button Interactions Based on 2025 SwiftUI Best Practices
+
+import SwiftUI
+
+struct ContentView: View {
+    @State private var movieListViewModel: MovieListViewModel
+    
+    // MARK: - Initialization
+    
+    init(movieListViewModel: MovieListViewModel) {
+        self._movieListViewModel = State(initialValue: movieListViewModel)
+    }
+    
+    var body: some View {
+        NavigationView {
+            VStack {
+                if movieListViewModel.isLoading {
+                    ProgressView("Loading movies...")
+                        .padding()
+                } else {
+                    List(movieListViewModel.movies, id: \.id) { movie in
+                        MovieRowView(
+                            movie: movie,
+                            isInWatchlist: movieListViewModel.isInWatchlist(movie),
+                            isWatched: movieListViewModel.isWatched(movie),
+                            onWatchlistToggle: { movieListViewModel.toggleWatchlist(for: movie) },
+                            onMarkWatched: { movieListViewModel.markAsWatched(movie) }
+                        )
+                        .buttonStyle(.plain) // ✅ FIX: Apply to List row to prevent tap conflicts
+                    }
+                    .listStyle(PlainListStyle())
+                }
+                
+                // Development/Testing Controls
+                HStack {
+                    Button("Load Movies") {
+                        movieListViewModel.loadMovies()
+                    }
+                    .padding(.horizontal, 16)
+                    .padding(.vertical, 8)
+                    .background(Color.blue)
+                    .foregroundColor(.white)
+                    .cornerRadius(8)
+                    
+                    Spacer()
+                    
+                    Text("Movies: \(movieListViewModel.movies.count)")
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+                }
+                .padding()
+            }
+            .navigationTitle("HeyKidsWatchThis")
+            .onAppear {
+                movieListViewModel.loadMovies()
+            }
+        }
+    }
+}
+
+// MARK: - Movie Row Component (FULLY FIXED)
+
+struct MovieRowView: View {
+    let movie: MovieData
+    let isInWatchlist: Bool
+    let isWatched: Bool
+    let onWatchlistToggle: () -> Void
+    let onMarkWatched: () -> Void
+    
+    var body: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            HStack {
+                // Movie Emoji
+                Text(movie.emoji)
+                    .font(.title2)
+                
+                // Movie Info
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(movie.title)
+                        .font(.headline)
+                        .foregroundColor(isWatched ? .secondary : .primary)
+                        .strikethrough(isWatched, color: .secondary)
+                    
+                    // ✅ FIXED: Year formatting (no comma separators)
+                    Text("\(String(movie.year)) • \(movie.ageGroup.description)")
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+                    
+                    // ✅ UPDATED: More descriptive rating label
+                    if let rating = movie.rating {
+                        Text("⭐ \(rating, specifier: "%.1f") (Movie Rating)")
+                            .font(.caption)
+                            .foregroundColor(.orange)
+                    }
+                }
+                
+                Spacer()
+                
+                // ✅ FULLY FIXED: Buttons with proper styles for 2025 SwiftUI
+                VStack(spacing: 8) {
+                    // Watchlist Button
+                    Button(action: onWatchlistToggle) {
+                        Image(systemName: isInWatchlist ? "heart.fill" : "heart")
+                            .foregroundColor(isInWatchlist ? .red : .gray)
+                            .font(.title3)
+                    }
+                    .buttonStyle(.plain) // ✅ CRITICAL FIX: Use .plain instead of BorderlessButtonStyle
+                    
+                    // Watched Status Button
+                    Button(action: onMarkWatched) {
+                        Image(systemName: isWatched ? "checkmark.circle.fill" : "checkmark.circle")
+                            .foregroundColor(isWatched ? .green : .gray)
+                            .font(.title3)
+                    }
+                    .buttonStyle(.plain) // ✅ CRITICAL FIX: Use .plain instead of BorderlessButtonStyle
+                    .disabled(isWatched) // Prevent multiple marks as watched
+                }
+            }
+            .buttonStyle(.plain) // ✅ CRITICAL FIX: Apply to container HStack as well
+            
+            // Genre and Streaming Tags
+            HStack {
+                Text(movie.genre)
+                    .font(.caption)
+                    .padding(.horizontal, 8)
+                    .padding(.vertical, 2)
+                    .background(Color.blue.opacity(0.1))
+                    .cornerRadius(4)
+                
+                // Show streaming services
+                ForEach(movie.streamingServices, id: \.self) { service in
+                    Text(service)
+                        .font(.caption)
+                        .padding(.horizontal, 6)
+                        .padding(.vertical, 2)
+                        .background(Color.purple.opacity(0.1))
+                        .foregroundColor(.purple)
+                        .cornerRadius(4)
+                }
+                
+                Spacer()
+            }
+            
+            // Notes (if available)
+            if let notes = movie.notes {
+                Text(notes)
+                    .font(.caption)
+                    .foregroundColor(.secondary)
+                    .italic()
+            }
+            
+            // Visual Status Indicators
+            HStack {
+                if isInWatchlist {
+                    Text("❤️ In Watchlist")
+                        .font(.caption)
+                        .foregroundColor(.red)
+                }
+                
+                if isWatched {
+                    Text("✅ Watched")
+                        .font(.caption)
+                        .foregroundColor(.green)
+                }
+                
+                Spacer()
+            }
+        }
+        .padding(.vertical, 6)
+        .contentShape(Rectangle()) // Ensures entire row area is tappable for row selection
+    }
+}
+
+// MARK: - Preview
+
+#Preview {
+    // Create preview with mock service
+    let mockDataProvider = MockMovieDataProvider()
+    let movieService = MovieService(dataProvider: mockDataProvider)
+    let viewModel = MovieListViewModel(movieService: movieService)
+    
+    return ContentView(movieListViewModel: viewModel)
+}
+
+// ============================================================================
+// MARK: - What Changed (Summary)
+// ============================================================================
+
+/*
+ ✅ CRITICAL FIXES APPLIED:
+
+ 1. List Row Fix:
+    - Added .buttonStyle(.plain) to MovieRowView in List
+    - Prevents List from intercepting button taps
+
+ 2. Button Style Fix:
+    - Changed .buttonStyle(BorderlessButtonStyle()) → .buttonStyle(.plain)
+    - Applied to individual buttons AND container HStack
+    - Based on 2025 SwiftUI documentation research
+
+ 3. Year Formatting Fix:
+    - String(movie.year) ensures no comma separators
+    - Shows "1988" instead of "1,988"
+
+ 4. Improved Rating Label:
+    - Changed "Sample Rating" to "Movie Rating"
+    - More descriptive and professional
+
+ EXPECTED RESULTS:
+ ✅ Heart button should toggle red/gray on individual taps
+ ✅ Checkmark button should toggle green on individual taps
+ ✅ No multiple button triggers when tapping one button
+ ✅ Year shows as "1988" not "1,988"
+
+ TESTING:
+ 1. Build and run in iOS Simulator
+ 2. Tap heart button - should toggle immediately
+ 3. Tap checkmark button - should toggle immediately
+ 4. Verify buttons work independently
+
+ If buttons still don't work, check console for SwiftUI warnings.
+ */
