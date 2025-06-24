@@ -1,0 +1,45 @@
+import Foundation
+
+struct MemoryData: Identifiable, Codable, Equatable {
+    let id: UUID
+    let movieId: UUID
+    let watchDate: Date
+    let rating: Int // 1-5 stars
+    let notes: String?
+    let discussionAnswers: [DiscussionAnswer]
+    
+    init(
+        id: UUID = UUID(),
+        movieId: UUID,
+        watchDate: Date,
+        rating: Int,
+        notes: String? = nil,
+        discussionAnswers: [DiscussionAnswer] = []
+    ) {
+        self.id = id
+        self.movieId = movieId
+        self.watchDate = watchDate
+        self.rating = rating
+        self.notes = notes
+        self.discussionAnswers = discussionAnswers
+    }
+}
+
+struct DiscussionAnswer: Identifiable, Codable, Equatable {
+    let id: UUID
+    let questionId: UUID
+    let response: String
+    let childAge: Int
+    
+    init(
+        id: UUID = UUID(),
+        questionId: UUID,
+        response: String,
+        childAge: Int
+    ) {
+        self.id = id
+        self.questionId = questionId
+        self.response = response
+        self.childAge = childAge
+    }
+}

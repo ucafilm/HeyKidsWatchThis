@@ -1,0 +1,32 @@
+// HeyKidsWatchThisApp.swift
+// HeyKidsWatchThis - Production App with Dependency Injection
+// Modern 2025 approach using @State for ViewModels
+
+import SwiftUI
+
+@main
+struct HeyKidsWatchThisApp: App {
+    
+    // MARK: - Dependency Creation
+    
+    /// Creates the complete dependency chain following your Phase 3 storage
+    private func createMovieListViewModel() -> MovieListViewModel {
+        // Phase 3: Create storage
+        let userDefaults = UserDefaultsStorage()
+        
+        // Phase 2: Create data provider
+        let dataProvider = LocalMovieDataProvider(userDefaults: userDefaults)
+        
+        // Phase 2: Create service
+        let movieService = MovieService(dataProvider: dataProvider)
+        
+        // Phase 4: Create ViewModel
+        return MovieListViewModel(movieService: movieService)
+    }
+    
+    var body: some Scene {
+        WindowGroup {
+            ContentView(movieListViewModel: createMovieListViewModel())
+        }
+    }
+}

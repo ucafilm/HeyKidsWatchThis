@@ -1,0 +1,81 @@
+// MovieDataProvider.swift
+// HeyKidsWatchThis - Phase 2: Data Provider Implementation
+// Connects MovieService to your existing Phase 3 UserDefaults storage
+
+import Foundation
+
+/// Protocol for data provider abstraction (connecting to your Phase 3 storage)
+protocol MovieDataProviderProtocol {
+    func loadMovies() -> [MovieData]
+    func saveWatchlist(_ watchlist: [UUID])
+    func loadWatchlist() -> [UUID]
+    func saveWatchedMovies(_ watchedMovies: [UUID: Date])
+    func loadWatchedMovies() -> [UUID: Date]
+}
+
+/// Data provider implementation connecting to your Phase 3 UserDefaults storage
+class LocalMovieDataProvider: MovieDataProviderProtocol {
+    
+    private let userDefaults: UserDefaultsStorageProtocol
+    
+    // MARK: - Storage Keys
+    private let moviesKey = "saved_movies"
+    private let watchlistKey = "user_watchlist"
+    private let watchedMoviesKey = "watched_movies"
+    
+    // MARK: - Initialization
+    
+    init(userDefaults: UserDefaultsStorageProtocol) {
+        self.userDefaults = userDefaults
+    }
+    
+    // MARK: - MovieDataProviderProtocol Implementation
+    
+    func loadMovies() -> [MovieData] {
+        return userDefaults.load([MovieData].self, forKey: moviesKey) ?? []
+    }
+    
+    func saveWatchlist(_ watchlist: [UUID]) {
+        _ = userDefaults.save(watchlist, forKey: watchlistKey)
+    }
+    
+    func loadWatchlist() -> [UUID] {
+        return userDefaults.load([UUID].self, forKey: watchlistKey) ?? []
+    }
+    
+    func saveWatchedMovies(_ watchedMovies: [UUID: Date]) {
+        _ = userDefaults.save(watchedMovies, forKey: watchedMoviesKey)
+    }
+    
+    func loadWatchedMovies() -> [UUID: Date] {
+        return userDefaults.load([UUID: Date].self, forKey: watchedMoviesKey) ?? [:]
+    }
+}
+
+/// Mock data provider for previews and testing
+class MockMovieDataProvider: MovieDataProviderProtocol {
+    
+    var movies: [MovieData] = []
+    var watchlist: [UUID] = []
+    var watchedMovies: [UUID: Date] = [:]
+    
+    func loadMovies() -> [MovieData] {
+        return movies
+    }
+    
+    func saveWatchlist(_ watchlist: [UUID]) {
+        self.watchlist = watchlist
+    }
+    
+    func loadWatchlist() -> [UUID] {
+        return watchlist
+    }
+    
+    func saveWatchedMovies(_ watchedMovies: [UUID: Date]) {
+        self.watchedMovies = watchedMovies
+    }
+    
+    func loadWatchedMovies() -> [UUID: Date] {
+        return watchedMovies
+    }
+}

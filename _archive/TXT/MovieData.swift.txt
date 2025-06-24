@@ -1,0 +1,38 @@
+import Foundation
+
+struct MovieData: Identifiable, Codable, Equatable {
+    let id: UUID
+    let title: String
+    let year: Int
+    let ageGroup: AgeGroup
+    let genre: String
+    let emoji: String
+    let streamingServices: [String]
+    let rating: Double?
+    let notes: String?
+    let watchedDate: Date?
+    
+    init(
+        id: UUID = UUID(),
+        title: String,
+        year: Int,
+        ageGroup: AgeGroup,
+        genre: String,
+        emoji: String,
+        streamingServices: [String],
+        rating: Double? = nil,
+        notes: String? = nil,
+        watchedDate: Date? = nil
+    ) {
+        self.id = id
+        self.title = title
+        self.year = year
+        self.ageGroup = ageGroup
+        self.genre = genre
+        self.emoji = emoji
+        self.streamingServices = streamingServices
+        self.rating = rating
+        self.notes = notes
+        self.watchedDate = watchedDate
+    }
+}

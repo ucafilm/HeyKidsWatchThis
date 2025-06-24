@@ -1,0 +1,53 @@
+import SwiftUI
+import Observation
+
+@Observable
+class MovieListViewModel {
+    
+    // MARK: - Published Properties (Automatically Observable)
+    var movies: [MovieData] = []
+    var searchText: String = ""
+    var selectedAgeGroup: AgeGroup? = nil
+    var isLoading: Bool = false
+    
+    // MARK: - Private Dependencies
+    private let movieService: MovieServiceProtocol
+    
+    // MARK: - Initialization
+    init(movieService: MovieServiceProtocol) {
+        self.movieService = movieService
+    }
+    
+    // MARK: - Actions
+    
+    /// Load all movies from the service
+    func loadMovies() {
+        isLoading = true
+        movies = movieService.getAllMovies()
+        isLoading = false
+    }
+    
+    /// Toggle a movie in the watchlist
+    func toggleWatchlist(for movie: MovieData) {
+        if movieService.isInWatchlist(movie.id) {
+            movieService.removeFromWatchlist(movie.id)
+        } else {
+            movieService.addToWatchlist(movie.id)
+        }
+    }
+    
+    /// Check if a movie is in the watchlist
+    func isInWatchlist(_ movie: MovieData) -> Bool {
+        return movieService.isInWatchlist(movie.id)
+    }
+    
+    /// Mark a movie as watched
+    func markAsWatched(_ movie: MovieData) {
+        movieService.markAsWatched(movie.id, date: Date())
+    }
+    
+    /// Check if a movie has been watched
+    func isWatched(_ movie: MovieData) -> Bool {
+        return movieService.isWatched(movie.id)
+    }
+}

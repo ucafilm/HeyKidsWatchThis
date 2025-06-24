@@ -1,0 +1,32 @@
+// Calendar Permissions Setup Instructions
+// Add this to your Info.plist for calendar integration to work
+
+/*
+TO ADD CALENDAR PERMISSIONS:
+
+1. Open your project in Xcode
+2. Navigate to your app target → Info tab
+3. Add these keys to "Custom iOS Target Properties":
+
+Key: NSCalendarsFullAccessUsageDescription
+Type: String
+Value: HeyKidsWatchThis needs calendar access to create movie night reminders and help you organize family time.
+
+Key: NSCalendarsWriteOnlyAccessUsageDescription  
+Type: String
+Value: HeyKidsWatchThis needs calendar access to schedule your family movie nights.
+
+OR add this to your Info.plist file directly:
+
+<key>NSCalendarsFullAccessUsageDescription</key>
+<string>HeyKidsWatchThis needs calendar access to create movie night reminders and help you organize family time.</string>
+<key>NSCalendarsWriteOnlyAccessUsageDescription</key>
+<string>HeyKidsWatchThis needs calendar access to schedule your family movie nights.</string>
+
+WHAT THIS ENABLES:
+✅ Calendar permission prompts
+✅ Create calendar events for movie nights
+✅ Add reminders 30 minutes before
+✅ Full movie details in calendar notes
+✅ 2-hour event duration
+*/
