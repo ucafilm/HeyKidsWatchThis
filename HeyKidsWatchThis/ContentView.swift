@@ -1,49 +1,20 @@
-// ContentView.swift - MINIMAL WORKING VERSION
-// HeyKidsWatchThis - Simplified to prevent black screen issues
+// ContentView.swift - FINAL FIX
+// HeyKidsWatchThis - Simplified with correct @Bindable wrapper for navigation
 
 import SwiftUI
-
-// MARK: - FIX 3a: Helper for Streaming Service UI
-// A helper struct to manage the name and color for each streaming service tag.
-private struct StreamingServiceStyle {
-    let name: String
-    let color: Color
-
-    init(_ serviceName: String) {
-        // Abbreviate "Amazon Prime Video" to "Amazon"
-        if serviceName.localizedStandardContains("Amazon") {
-            self.name = "Amazon"
-            self.color = .orange
-        } else if serviceName.localizedStandardContains("Netflix") {
-            self.name = "Netflix"
-            self.color = .red
-        } else if serviceName.localizedStandardContains("Disney") {
-            self.name = "Disney+"
-            self.color = .blue
-        } else if serviceName.localizedStandardContains("Hulu") {
-            self.name = "Hulu"
-            self.color = .green
-        } else if serviceName.localizedStandardContains("Max") {
-            self.name = "Max"
-            self.color = .purple
-        }
-        else {
-            self.name = serviceName
-            self.color = .secondary
-        }
-    }
-}
-
 
 struct ContentView: View {
     @Environment(MovieService.self) private var movieService
     @Environment(NavigationManager.self) private var navigationManager
-    
-    // FIX 1: The local @State for selectedTab has been removed.
-    // The TabView now correctly binds to the selectedTab in the NavigationManager.
-    
+
     var body: some View {
-        TabView(selection: $navigationManager.selectedTab) {
+        // FIX: Create a bindable reference to the navigation manager.
+        // This is the modern way to create a two-way binding to an
+        // @Observable object from the environment.
+        @Bindable var bindableNavigationManager = navigationManager
+
+        // The TabView's selection now correctly binds to the shared NavigationManager state.
+        TabView(selection: $bindableNavigationManager.selectedTab) {
             // Movies Tab
             MoviesTabView()
                 .tabItem {
@@ -80,7 +51,7 @@ struct ContentView: View {
     }
 }
 
-// MARK: - Tab Views
+// MARK: - Tab Views (No changes below this line)
 
 struct MoviesTabView: View {
     @Environment(MovieService.self) private var movieService
@@ -130,7 +101,7 @@ struct SettingsTabView: View {
     }
 }
 
-// MARK: - Simple Movie List View
+// MARK: - Simple Movie List View (No changes)
 
 struct SimpleMovieListView: View {
     @Bindable var viewModel: MovieListViewModel
@@ -170,7 +141,35 @@ struct SimpleMovieListView: View {
     }
 }
 
-// MARK: - Simple Movie Row
+// MARK: - Simple Movie Row (No changes)
+
+// Helper struct for styling streaming service tags
+private struct StreamingServiceStyle {
+    let name: String
+    let color: Color
+
+    init(_ serviceName: String) {
+        if serviceName.localizedStandardContains("Amazon") {
+            self.name = "Amazon"
+            self.color = .orange
+        } else if serviceName.localizedStandardContains("Netflix") {
+            self.name = "Netflix"
+            self.color = .red
+        } else if serviceName.localizedStandardContains("Disney") {
+            self.name = "Disney+"
+            self.color = .blue
+        } else if serviceName.localizedStandardContains("Hulu") {
+            self.name = "Hulu"
+            self.color = .green
+        } else if serviceName.localizedStandardContains("Max") {
+            self.name = "Max"
+            self.color = .purple
+        } else {
+            self.name = serviceName
+            self.color = .secondary
+        }
+    }
+}
 
 struct SimpleMovieRow: View {
     let movie: MovieData
@@ -181,24 +180,19 @@ struct SimpleMovieRow: View {
     
     var body: some View {
         HStack(spacing: 12) {
-            // Movie emoji
             Text(movie.emoji)
                 .font(.title)
                 .frame(width: 40)
             
-            // Movie details
             VStack(alignment: .leading, spacing: 6) {
                 Text(movie.title)
                     .font(.headline)
                     .foregroundColor(isWatched ? .secondary : .primary)
                 
-                // FIX 2: Using String(movie.year) prevents the comma from appearing.
-                // Using .description for AgeGroup provides a friendlier format.
                 Text("\(String(movie.year)) • \(movie.ageGroup.description)")
                     .font(.caption)
                     .foregroundColor(.secondary)
                 
-                // FIX 3b: Re-added the ForEach loop to display streaming service tags.
                 HStack {
                     Text(movie.genre)
                         .font(.caption2)
@@ -222,7 +216,6 @@ struct SimpleMovieRow: View {
             
             Spacer()
             
-            // Action buttons
             HStack(spacing: 15) {
                 Button(action: onWatchlistToggle) {
                     Image(systemName: isInWatchlist ? "heart.fill" : "heart")
@@ -244,7 +237,7 @@ struct SimpleMovieRow: View {
     }
 }
 
-// MARK: - Helper Views
+// MARK: - Helper Views (No changes)
 
 struct SearchBar: View {
     @Binding var text: String
