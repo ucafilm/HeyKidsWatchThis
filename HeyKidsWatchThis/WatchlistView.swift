@@ -1,6 +1,6 @@
 // WatchlistView.swift
-// HEYKIDSWATCHTHIS - FINAL FIXED VERSION
-// Correctly presents the CalendarIntegratedMovieScheduler
+// FINAL DEFINITIVE VERSION
+// Now presents the correct MovieSchedulerView.
 
 import SwiftUI
 import Observation
@@ -8,8 +8,6 @@ import EventKit
 
 struct WatchlistView: View {
     @Environment(MovieService.self) private var movieService
-    
-    // This environment object is now needed for the correct scheduler
     @EnvironmentObject private var calendarService: CalendarService
     
     @State private var showingMovieScheduler = false
@@ -18,9 +16,8 @@ struct WatchlistView: View {
     @State private var searchText = ""
     
     private var watchlistMovies: [MovieData] {
+        // Using a computed property that is always up-to-date
         let allMovies = movieService.getAllMovies()
-        
-        // Use the synchronized isInWatchlist property
         let watchlistMovies = allMovies.filter { $0.isInWatchlist }
         
         if searchText.isEmpty {
@@ -53,7 +50,6 @@ struct WatchlistView: View {
             .toolbar {
                 ToolbarItemGroup(placement: .navigationBarTrailing) {
                     Button("Refresh") {
-                        // This will force a reload of the watchlist from storage
                         if let service = movieService as? EnhancedMovieService {
                             service.refreshFromStorage()
                         }
@@ -67,9 +63,9 @@ struct WatchlistView: View {
                 }
             }
             .fullScreenCover(isPresented: $showingMovieScheduler) {
-                // ✅ FIX: Present the correct, fully-functional scheduler view
                 if let movie = selectedMovie {
-                    CalendarIntegratedMovieScheduler(
+                    // ✅ FIX: Changed this to present MovieSchedulerView, the correct file.
+                    MovieSchedulerView(
                         movie: movie,
                         movieService: movieService,
                         onDismiss: {
@@ -77,7 +73,6 @@ struct WatchlistView: View {
                             selectedMovie = nil
                         }
                     )
-                    // The CalendarService is already in the environment from HeyKidsWatchThisApp
                 }
             }
             .onAppear {
@@ -90,7 +85,6 @@ struct WatchlistView: View {
     
     private func scheduleMovie(_ movie: MovieData) {
         selectedMovie = movie
-        // Keep the delay workaround for the iOS 17/18 presentation bug
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.15) {
             showingMovieScheduler = true
         }
@@ -98,7 +92,7 @@ struct WatchlistView: View {
 }
 
 
-// MARK: - Content Views (No changes needed below)
+// MARK: - Subviews (No changes below this line)
 
 struct WatchlistContentView: View {
     let movies: [MovieData]
