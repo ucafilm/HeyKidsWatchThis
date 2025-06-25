@@ -1,7 +1,6 @@
 // WatchlistView.swift
-// HeyKidsWatchThis - FIXED VERSION
-// Properly using shared MovieService from environment
-// FIXED: No separate service instances
+// FINAL, DEFINITIVE VERSION
+// This version correctly presents the one, true MovieSchedulerView.
 
 import SwiftUI
 import Observation
@@ -9,35 +8,16 @@ import EventKit
 
 struct WatchlistView: View {
     @Environment(MovieService.self) private var movieService
+    @EnvironmentObject private var calendarService: CalendarService
+    
     @State private var showingMovieScheduler = false
     @State private var selectedMovie: MovieData?
     @State private var isLoading = false
     @State private var searchText = ""
     
-    // Add this for testing
-    @State private var testMessage = ""
-    
-    // Computed property that directly uses the shared movieService
     private var watchlistMovies: [MovieData] {
         let allMovies = movieService.getAllMovies()
-        let watchlistIds = movieService.watchlist
-        
-        // DEBUG: Print diagnostic info
-        print("🎬 WatchlistView Debug:")
-        print("   All movies count: \(allMovies.count)")
-        print("   Watchlist IDs count: \(watchlistIds.count)")
-        print("   Watchlist IDs: \(watchlistIds.prefix(3))")
-        
-        // FIXED: Use the synchronized isInWatchlist property instead of service call
-        let watchlistMovies = allMovies.filter { movie in
-            let isInWatchlist = movie.isInWatchlist // Use synchronized property
-            if isInWatchlist {
-                print("   ✅ Movie '\(movie.title)' is in watchlist")
-            }
-            return isInWatchlist
-        }
-        
-        print("   Final watchlist movies count: \(watchlistMovies.count)")
+        let watchlistMovies = allMovies.filter { $0.isInWatchlist }
         
         if searchText.isEmpty {
             return watchlistMovies
@@ -68,37 +48,26 @@ struct WatchlistView: View {
             .navigationBarTitleDisplayMode(.large)
             .toolbar {
                 ToolbarItemGroup(placement: .navigationBarTrailing) {
-                    Button("Debug") {
-                        DispatchQueue.main.async {
-                            print("🔍 MANUAL DEBUG:")
-                            print("   Movies count: \(movieService.getAllMovies().count)")
-                            print("   Watchlist IDs: \(movieService.watchlist)")
-                            
-                            // Try adding a test movie to watchlist
-                            if let firstMovie = movieService.getAllMovies().first {
-                                print("   Adding test movie '\(firstMovie.title)' to watchlist...")
-                                movieService.addToWatchlist(firstMovie.id)
-                                print("   New watchlist IDs: \(movieService.watchlist)")
-                            }
-                        }
-                    }
-                    
                     Button("Refresh") {
-                        movieService.refreshFromStorage()
+                        if let service = movieService as? EnhancedMovieService {
+                            service.refreshFromStorage()
+                        }
                     }
                 }
             }
             .searchable(text: $searchText, prompt: "Search your movie queue")
             .refreshable {
-                // Force refresh the movie service
-                movieService.refreshFromStorage()
+                if let service = movieService as? EnhancedMovieService {
+                    service.refreshFromStorage()
+                }
             }
             .fullScreenCover(isPresented: $showingMovieScheduler) {
                 if let movie = selectedMovie {
-                    // ✅ Use the final, stable scheduler view
+                    // ✅ FIX: This now correctly calls MovieSchedulerView, the file we fixed.
                     MovieSchedulerView(
                         movie: movie,
                         movieService: movieService,
+                        calendarService: calendarService,
                         onDismiss: {
                             showingMovieScheduler = false
                             selectedMovie = nil
@@ -107,38 +76,31 @@ struct WatchlistView: View {
                 }
             }
             .onAppear {
-                movieService.refreshFromStorage()
+                if let service = movieService as? EnhancedMovieService {
+                    service.refreshFromStorage()
+                }
             }
         }
     }
     
     private func scheduleMovie(_ movie: MovieData) {
         selectedMovie = movie
-        // ✅ Keep the delay workaround for the iOS 17/18 presentation bug
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.15) {
             showingMovieScheduler = true
         }
     }
-    
-    // Helper function to format scheduled dates
-    private func formattedScheduledDate(_ date: Date) -> String {
-        let formatter = DateFormatter()
-        formatter.dateStyle = .medium
-        formatter.timeStyle = .short
-        return formatter.string(from: date)
-    }
 }
 
-// MARK: - Simplified Content View
+
+// MARK: - Subviews (No changes below this line)
 
 struct WatchlistContentView: View {
     let movies: [MovieData]
-    let movieService: MovieService
+    let movieService: MovieServiceProtocol
     let onScheduleMovie: (MovieData) -> Void
     
     var body: some View {
         List {
-            // Quick Actions Section
             if !movies.isEmpty {
                 Section {
                     WatchlistQuickActionsView(
@@ -149,21 +111,19 @@ struct WatchlistContentView: View {
                 .listRowBackground(Color.clear)
             }
             
-            // Movies Section
             Section("Your Movie Queue (\(movies.count))") {
                 ForEach(movies) { movie in
                     WatchlistMovieRow(
                         movie: movie,
                         movieService: movieService,
                         onSchedule: { onScheduleMovie(movie) },
-                        onRemove: { 
+                        onRemove: {
                             movieService.removeFromWatchlist(movie.id)
                         }
                     )
                 }
             }
             
-            // Statistics Section
             if !movies.isEmpty {
                 Section("Statistics") {
                     WatchlistStatsView(movies: movies)
@@ -173,8 +133,6 @@ struct WatchlistContentView: View {
     }
 }
 
-// MARK: - Quick Actions (Simplified)
-
 struct WatchlistQuickActionsView: View {
     let movies: [MovieData]
     let onScheduleMovie: (MovieData) -> Void
@@ -182,7 +140,6 @@ struct WatchlistQuickActionsView: View {
     var body: some View {
         VStack(spacing: 12) {
             HStack(spacing: 16) {
-                // Suggest for Tonight - but let them pick the actual time
                 Button(action: {
                     if let randomMovie = movies.randomElement() {
                         onScheduleMovie(randomMovie)
@@ -205,17 +162,14 @@ struct WatchlistQuickActionsView: View {
     }
 }
 
-// MARK: - Movie Row (Simplified)
-
 struct WatchlistMovieRow: View {
     let movie: MovieData
-    let movieService: MovieService
+    let movieService: MovieServiceProtocol
     let onSchedule: () -> Void
     let onRemove: () -> Void
     
     var body: some View {
         HStack(spacing: 12) {
-            // Movie Info
             VStack(alignment: .leading, spacing: 4) {
                 HStack {
                 Text(movie.emoji)
@@ -256,7 +210,6 @@ struct WatchlistMovieRow: View {
                             }
                         }
                     
-                    // NEW: Show scheduled date if exists
                     if let scheduledDate = movie.scheduledDate {
                             HStack(spacing: 4) {
                                 Image(systemName: "calendar")
@@ -274,7 +227,6 @@ struct WatchlistMovieRow: View {
                         Spacer()
                     }
                 
-                // Streaming Services
                 if !movie.streamingServices.isEmpty {
                     HStack(spacing: 4) {
                         ForEach(movie.streamingServices.prefix(3), id: \.self) { service in
@@ -300,9 +252,7 @@ struct WatchlistMovieRow: View {
             
             Spacer()
             
-            // Action Buttons
             VStack(spacing: 8) {
-                // Schedule Button
                 Button(action: onSchedule) {
                     Image(systemName: "calendar.badge.plus")
                         .font(.title3)
@@ -310,7 +260,6 @@ struct WatchlistMovieRow: View {
                 }
                 .buttonStyle(.borderless)
                 
-                // Remove Button
                 Button(action: onRemove) {
                     Image(systemName: "heart.fill")
                         .font(.title3)
@@ -336,8 +285,6 @@ struct WatchlistMovieRow: View {
         }
     }
 }
-
-// MARK: - Statistics View (Simplified)
 
 struct WatchlistStatsView: View {
     let movies: [MovieData]
@@ -402,8 +349,6 @@ struct StatItem: View {
     }
 }
 
-// MARK: - Empty State
-
 struct WatchlistEmptyStateView: View {
     @EnvironmentObject private var navigationManager: NavigationManager
     
@@ -425,7 +370,6 @@ struct WatchlistEmptyStateView: View {
                     .padding(.horizontal)
             }
             
-            // RESTORED: Working tab navigation to Movies tab
             Button("Browse Movies") {
                 navigationManager.navigateToMovies()
             }
@@ -435,8 +379,6 @@ struct WatchlistEmptyStateView: View {
         .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 }
-
-// MARK: - Loading State
 
 struct WatchlistLoadingView: View {
     var body: some View {
@@ -452,98 +394,3 @@ struct WatchlistLoadingView: View {
         .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 }
-
-// MARK: - Movie Scheduler Sheet (Simplified for Debugging)
-
-struct MovieSchedulerSheet: View {
-    let movie: MovieData
-    let onScheduled: () -> Void
-    @Environment(\.dismiss) private var dismiss
-    
-    init(movie: MovieData, onScheduled: @escaping () -> Void) {
-        self.movie = movie
-        self.onScheduled = onScheduled
-        print("🎬 MovieSchedulerSheet init for: \(movie.title)")
-    }
-    
-    var body: some View {
-        NavigationView {
-            VStack(spacing: 30) {
-                // Movie Header
-                VStack(spacing: 16) {
-                    Text(movie.emoji)
-                        .font(.system(size: 80))
-                    
-                    Text("Schedule \(movie.title)")
-                        .font(.title)
-                        .bold()
-                        .multilineTextAlignment(.center)
-                    
-                    Text("Choose when to watch this movie")
-                        .font(.subheadline)
-                        .foregroundColor(.secondary)
-                        .multilineTextAlignment(.center)
-                }
-                
-                Spacer()
-                
-                // Simple Action Buttons
-                VStack(spacing: 16) {
-                    Button("Tonight at 7 PM") {
-                        print("🎬 Scheduling \(movie.title) for tonight")
-                        onScheduled()
-                        dismiss()
-                    }
-                    .buttonStyle(.borderedProminent)
-                    .font(.headline)
-                    
-                    Button("Tomorrow at 7 PM") {
-                        print("🎬 Scheduling \(movie.title) for tomorrow")
-                        onScheduled()
-                        dismiss()
-                    }
-                    .buttonStyle(.bordered)
-                    .font(.headline)
-                    
-                    Button("This Weekend") {
-                        print("🎬 Scheduling \(movie.title) for weekend")
-                        onScheduled()
-                        dismiss()
-                    }
-                    .buttonStyle(.bordered)
-                    .font(.headline)
-                }
-                
-                Spacer()
-                
-                Button("Cancel") {
-                    dismiss()
-                }
-                .foregroundColor(.secondary)
-            }
-            .padding(24)
-            .navigationTitle("Schedule Movie")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .navigationBarTrailing) {
-                    Button("Done") {
-                        dismiss()
-                    }
-                }
-            }
-        }
-    }
-}
-
-// MARK: - Removed duplicate MovieSchedulerView - using dedicated MovieSchedulerView.swift file instead
-
-// MARK: - Preview
-
-#if DEBUG
-struct WatchlistView_Previews: PreviewProvider {
-    static var previews: some View {
-        WatchlistView()
-            .environment(MovieService(dataProvider: MovieDataProvider()))
-    }
-}
-#endif

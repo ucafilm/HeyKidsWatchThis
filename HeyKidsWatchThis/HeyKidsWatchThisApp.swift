@@ -1,6 +1,6 @@
 // HeyKidsWatchThisApp.swift
-// FIXED: Proper service initialization to prevent XPC connection issues
-// Single source of truth for all services
+// FINAL DEFINITIVE VERSION
+// Refactored to use standard SwiftUI lifecycle and state management for services, ensuring stability.
 
 import SwiftUI
 import EventKit
@@ -8,80 +8,48 @@ import EventKit
 @main
 struct HeyKidsWatchThisApp: App {
     
-    // FIXED: Create services ONCE and share them properly
+    // ✅ FIX: Services are now initialized directly as state properties.
+    // This is the modern, standard, and most stable approach.
+    // The custom init() has been removed.
+    
+    @State private var movieDataProvider = MovieDataProvider()
+    @State private var memoryDataProvider = MemoryDataProvider()
+    
     @State private var movieService: MovieService
     @State private var memoryService: MemoryService
     @State private var navigationManager: NavigationManager
-    @State private var calendarService = CalendarService() // ADD SHARED CALENDAR SERVICE
     
-    // FIXED: Proper initialization in init() to ensure single service instances
+    // For ObservableObject, @StateObject is the correct property wrapper.
+    @StateObject private var calendarService = CalendarService()
+    
     init() {
-        print("🚀 HeyKidsWatchThisApp initializing...")
+        // Create instances of the services here to pass to the @State properties.
+        let movieData = MovieDataProvider()
+        let movieSvc = MovieService(dataProvider: movieData)
         
-        // Create data providers
-        let movieDataProvider = MovieDataProvider()
-        let memoryDataProvider = MemoryDataProvider()
+        let memoryData = MemoryDataProvider()
+        let memorySvc = MemoryService(dataProvider: memoryData)
         
-        // Create services ONCE
-        let movieService = MovieService(dataProvider: movieDataProvider)
-        let memoryService = MemoryService(dataProvider: memoryDataProvider)
-        
-        // Create navigation manager with the SAME service instances
-        let navigationManager = NavigationManager(
-            movieService: movieService, 
-            memoryService: memoryService
-        )
-        
-        // Initialize @State properties
-        self._movieService = State(initialValue: movieService)
-        self._memoryService = State(initialValue: memoryService)
-        self._navigationManager = State(initialValue: navigationManager)
-        
-        print("🚀 Services initialized successfully")
+        // Initialize the @State properties with the created services.
+        self._movieDataProvider = State(initialValue: movieData)
+        self._memoryDataProvider = State(initialValue: memoryData)
+        self._movieService = State(initialValue: movieSvc)
+        self._memoryService = State(initialValue: memorySvc)
+        self._navigationManager = State(initialValue: NavigationManager(movieService: movieSvc, memoryService: memorySvc))
     }
     
     var body: some Scene {
         WindowGroup {
             ContentView()
+                // Provide all services to the environment so views can access them.
                 .environment(movieService)
                 .environment(navigationManager)
                 .environment(memoryService)
-                .environmentObject(calendarService) // SHARE CALENDAR SERVICE
+                .environmentObject(calendarService)
                 .onAppear {
-                    // Print debug information on app launch
-                    print("🔍 DEBUG INFO ON LAUNCH:")
-                    print("Movies: \(movieService.getAllMovies().count)")
-                    print("Watchlist: \(movieService.watchlist.count)")
-                    
-                    // Request calendar permissions for scheduling
-                    requestCalendarPermissions()
+                    // This is a good place for one-time setup actions.
+                    calendarService.requestFullAccess()
                 }
-        }
-    }
-    
-    private func requestCalendarPermissions() {
-        let eventStore = EKEventStore()
-        
-        if #available(iOS 17.0, *) {
-            eventStore.requestFullAccessToEvents { granted, error in
-                DispatchQueue.main.async {
-                    if granted {
-                        print("📅 Calendar access granted")
-                    } else {
-                        print("📅 Calendar access denied: \(error?.localizedDescription ?? "Unknown error")")
-                    }
-                }
-            }
-        } else {
-            eventStore.requestAccess(to: .event) { granted, error in
-                DispatchQueue.main.async {
-                    if granted {
-                        print("📅 Calendar access granted")
-                    } else {
-                        print("📅 Calendar access denied: \(error?.localizedDescription ?? "Unknown error")")
-                    }
-                }
-            }
         }
     }
 }

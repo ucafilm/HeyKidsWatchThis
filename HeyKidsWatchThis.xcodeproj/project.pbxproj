@@ -29,9 +29,22 @@
 		228DF6532DFC7C0B00AED4B2 /* HeyKidsWatchThisUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = HeyKidsWatchThisUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
+/* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
+		220978452E0B9E4A00408F39 /* Exceptions for "HeyKidsWatchThis" folder in "HeyKidsWatchThis" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Info.plist,
+			);
+			target = 228DF63B2DFC7C0A00AED4B2 /* HeyKidsWatchThis */;
+		};
+/* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
+
 /* Begin PBXFileSystemSynchronizedRootGroup section */
 		228DF63E2DFC7C0A00AED4B2 /* HeyKidsWatchThis */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				220978452E0B9E4A00408F39 /* Exceptions for "HeyKidsWatchThis" folder in "HeyKidsWatchThis" target */,
+			);
 			path = HeyKidsWatchThis;
 			sourceTree = "<group>";
 		};
@@ -400,6 +413,7 @@
 				DEVELOPMENT_TEAM = JQUV3R9FSG;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = HeyKidsWatchThis/Info.plist;
 				INFOPLIST_KEY_NSCalendarsFullAccessUsageDescription = "HeyKidsWatchThis needs calendar access to create movie night reminders and help you organize family time.";
 				INFOPLIST_KEY_NSCalendarsWriteOnlyAccessUsageDescription = "HeyKidsWatchThis needs calendar access to schedule your family movie nights.";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
@@ -430,6 +444,7 @@
 				DEVELOPMENT_TEAM = JQUV3R9FSG;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = HeyKidsWatchThis/Info.plist;
 				INFOPLIST_KEY_NSCalendarsFullAccessUsageDescription = "HeyKidsWatchThis needs calendar access to create movie night reminders and help you organize family time.";
 				INFOPLIST_KEY_NSCalendarsWriteOnlyAccessUsageDescription = "HeyKidsWatchThis needs calendar access to schedule your family movie nights.";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;

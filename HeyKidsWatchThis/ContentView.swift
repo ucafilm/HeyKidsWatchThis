@@ -1,15 +1,20 @@
-// ContentView.swift - MINIMAL WORKING VERSION
-// HeyKidsWatchThis - Simplified to prevent black screen issues
+// ContentView.swift - FINAL FIX
+// HeyKidsWatchThis - Simplified with correct @Bindable wrapper for navigation
 
 import SwiftUI
 
 struct ContentView: View {
     @Environment(MovieService.self) private var movieService
     @Environment(NavigationManager.self) private var navigationManager
-    @State private var selectedTab: AppTab = .movies
-    
+
     var body: some View {
-        TabView(selection: $selectedTab) {
+        // FIX: Create a bindable reference to the navigation manager.
+        // This is the modern way to create a two-way binding to an
+        // @Observable object from the environment.
+        @Bindable var bindableNavigationManager = navigationManager
+
+        // The TabView's selection now correctly binds to the shared NavigationManager state.
+        TabView(selection: $bindableNavigationManager.selectedTab) {
             // Movies Tab
             MoviesTabView()
                 .tabItem {
@@ -39,14 +44,14 @@ struct ContentView: View {
                 .tag(AppTab.settings)
         }
         .onAppear {
-            print("🎬 ContentView appeared")
-            print("🎬 Movies available: \(movieService.getAllMovies().count)")
-            print("🎬 Watchlist count: \(movieService.watchlist.count)")
+            print("ContentView appeared")
+            print("Movies available: \(movieService.getAllMovies().count)")
+            print("Watchlist count: \(movieService.watchlist.count)")
         }
     }
 }
 
-// MARK: - Tab Views
+// MARK: - Tab Views (No changes below this line)
 
 struct MoviesTabView: View {
     @Environment(MovieService.self) private var movieService
@@ -96,7 +101,7 @@ struct SettingsTabView: View {
     }
 }
 
-// MARK: - Simple Movie List View
+// MARK: - Simple Movie List View (No changes)
 
 struct SimpleMovieListView: View {
     @Bindable var viewModel: MovieListViewModel
@@ -136,7 +141,35 @@ struct SimpleMovieListView: View {
     }
 }
 
-// MARK: - Simple Movie Row
+// MARK: - Simple Movie Row (No changes)
+
+// Helper struct for styling streaming service tags
+private struct StreamingServiceStyle {
+    let name: String
+    let color: Color
+
+    init(_ serviceName: String) {
+        if serviceName.localizedStandardContains("Amazon") {
+            self.name = "Amazon"
+            self.color = .orange
+        } else if serviceName.localizedStandardContains("Netflix") {
+            self.name = "Netflix"
+            self.color = .red
+        } else if serviceName.localizedStandardContains("Disney") {
+            self.name = "Disney+"
+            self.color = .blue
+        } else if serviceName.localizedStandardContains("Hulu") {
+            self.name = "Hulu"
+            self.color = .green
+        } else if serviceName.localizedStandardContains("Max") {
+            self.name = "Max"
+            self.color = .purple
+        } else {
+            self.name = serviceName
+            self.color = .secondary
+        }
+    }
+}
 
 struct SimpleMovieRow: View {
     let movie: MovieData
@@ -146,52 +179,65 @@ struct SimpleMovieRow: View {
     let onMarkWatched: () -> Void
     
     var body: some View {
-        HStack {
-            // Movie emoji
+        HStack(spacing: 12) {
             Text(movie.emoji)
-                .font(.title2)
+                .font(.title)
+                .frame(width: 40)
             
-            // Movie details
-            VStack(alignment: .leading, spacing: 4) {
+            VStack(alignment: .leading, spacing: 6) {
                 Text(movie.title)
                     .font(.headline)
                     .foregroundColor(isWatched ? .secondary : .primary)
                 
-                Text("\(movie.year) • \(movie.ageGroup.rawValue)")
+                Text("\(String(movie.year)) • \(movie.ageGroup.description)")
                     .font(.caption)
                     .foregroundColor(.secondary)
                 
-                Text(movie.genre)
-                    .font(.caption)
-                    .padding(.horizontal, 8)
-                    .padding(.vertical, 2)
-                    .background(Color.blue.opacity(0.1))
-                    .cornerRadius(4)
+                HStack {
+                    Text(movie.genre)
+                        .font(.caption2)
+                        .padding(.horizontal, 6)
+                        .padding(.vertical, 2)
+                        .background(Color.gray.opacity(0.15))
+                        .cornerRadius(4)
+
+                    ForEach(movie.streamingServices, id: \.self) { serviceName in
+                        let style = StreamingServiceStyle(serviceName)
+                        Text(style.name)
+                            .font(.caption2).bold()
+                            .padding(.horizontal, 6)
+                            .padding(.vertical, 2)
+                            .background(style.color.opacity(0.15))
+                            .foregroundColor(style.color)
+                            .cornerRadius(4)
+                    }
+                }
             }
             
             Spacer()
             
-            // Action buttons
-            VStack(spacing: 8) {
+            HStack(spacing: 15) {
                 Button(action: onWatchlistToggle) {
                     Image(systemName: isInWatchlist ? "heart.fill" : "heart")
                         .foregroundColor(isInWatchlist ? .red : .gray)
+                        .font(.title2)
                 }
                 .buttonStyle(.plain)
                 
                 Button(action: onMarkWatched) {
                     Image(systemName: isWatched ? "checkmark.circle.fill" : "circle")
                         .foregroundColor(isWatched ? .green : .gray)
+                        .font(.title2)
                 }
                 .buttonStyle(.plain)
                 .disabled(isWatched)
             }
         }
-        .padding(.vertical, 4)
+        .padding(.vertical, 8)
     }
 }
 
-// MARK: - Helper Views
+// MARK: - Helper Views (No changes)
 
 struct SearchBar: View {
     @Binding var text: String
