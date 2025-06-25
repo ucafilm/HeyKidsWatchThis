@@ -1,12 +1,11 @@
 // CalendarIntegratedMovieScheduler.swift
-// TDD + RAG + Context7: Working iOS Calendar Integration
-// FIXED: Added specific error alerts for better user feedback.
+// DEFINITIVE FIXED VERSION
+// Replaced graphical date picker with a more stable style and fixed date logic.
 
 import SwiftUI
 import EventKit
 import Foundation
 
-// ✅ FIX: Enum to handle different alert states
 enum SchedulerAlertType: Identifiable {
     case success(String)
     case failure(String)
@@ -27,7 +26,7 @@ struct CalendarIntegratedMovieScheduler: View {
     @EnvironmentObject private var calendarService: CalendarService
     @State private var selectedDate = Date()
     @State private var isScheduling = false
-    @State private var alertType: SchedulerAlertType? // ✅ FIX: Use enum for alerts
+    @State private var alertType: SchedulerAlertType?
     @State private var selectedTimeOption = "Tonight at 7 PM"
     
     private let timeOptions = [
@@ -43,38 +42,45 @@ struct CalendarIntegratedMovieScheduler: View {
                 Color(.systemGroupedBackground)
                     .ignoresSafeArea()
                 
-                VStack(spacing: 24) {
-                    // Movie Header, Time Selection, etc. (No changes here)
-                    VStack(spacing: 12) {
-                        Text(movie.emoji).font(.system(size: 50))
-                        Text(movie.title).font(.title2).fontWeight(.bold).multilineTextAlignment(.center)
-                        Text(movie.ageGroup.description).font(.caption).foregroundColor(.secondary)
-                    }
-                    .padding().background(RoundedRectangle(cornerRadius: 12).fill(Color(.secondarySystemBackground)))
-
-                    VStack(alignment: .leading, spacing: 12) {
-                        Text("When would you like to watch?").font(.headline).padding(.horizontal)
-                        ForEach(timeOptions, id: \.self) { option in
-                            Button { selectedTimeOption = option } label: {
-                                HStack {
-                                    Text(option).foregroundColor(.primary)
-                                    Spacer()
-                                    if selectedTimeOption == option { Image(systemName: "checkmark.circle.fill").foregroundColor(.blue) }
-                                }
-                            }.padding().background(RoundedRectangle(cornerRadius: 8).fill(selectedTimeOption == option ? Color.blue.opacity(0.1) : Color(.tertiarySystemBackground))).buttonStyle(.plain)
+                ScrollView {
+                    VStack(spacing: 20) {
+                        // Movie Header
+                        VStack(spacing: 12) {
+                            Text(movie.emoji).font(.system(size: 50))
+                            Text(movie.title).font(.title2).fontWeight(.bold).multilineTextAlignment(.center)
+                            Text(movie.ageGroup.description).font(.caption).foregroundColor(.secondary)
                         }
-                    }.padding().background(RoundedRectangle(cornerRadius: 12).fill(Color(.secondarySystemBackground)))
+                        .padding()
+                        .background(RoundedRectangle(cornerRadius: 12).fill(Color(.secondarySystemBackground)))
 
-                    if selectedTimeOption == "Custom Date..." {
-                        VStack {
-                            DatePicker("Select Date & Time", selection: $selectedDate, in: Date()..., displayedComponents: [.date, .hourAndMinute])
-                            .datePickerStyle(.graphical)
+                        // Time Selection
+                        VStack(alignment: .leading, spacing: 12) {
+                            Text("When would you like to watch?").font(.headline).padding(.horizontal)
+                            ForEach(timeOptions, id: \.self) { option in
+                                Button { selectedTimeOption = option } label: {
+                                    HStack {
+                                        Text(option).foregroundColor(.primary)
+                                        Spacer()
+                                        if selectedTimeOption == option { Image(systemName: "checkmark.circle.fill").foregroundColor(.blue) }
+                                    }
+                                }.padding().background(RoundedRectangle(cornerRadius: 8).fill(selectedTimeOption == option ? Color.blue.opacity(0.1) : Color(.tertiarySystemBackground))).buttonStyle(.plain)
+                            }
                         }.padding().background(RoundedRectangle(cornerRadius: 12).fill(Color(.secondarySystemBackground)))
-                    }
-                    
-                    Spacer()
-                    
-                    VStack(spacing: 12) {
+
+                        // ✅ FIX 1: Using the more stable .compact date picker style to prevent crashes.
+                        if selectedTimeOption == "Custom Date..." {
+                            DatePicker(
+                                "Select Date & Time",
+                                selection: $selectedDate,
+                                in: Date()...,
+                                displayedComponents: [.date, .hourAndMinute]
+                            )
+                            .datePickerStyle(.compact)
+                            .padding()
+                            .background(RoundedRectangle(cornerRadius: 12).fill(Color(.secondarySystemBackground)))
+                        }
+                        
+                        // Action Button
                         Button(action: scheduleMovieNight) {
                             HStack {
                                 if isScheduling {
@@ -84,25 +90,23 @@ struct CalendarIntegratedMovieScheduler: View {
                                     Image(systemName: "calendar.badge.plus")
                                     Text("Schedule Movie Night")
                                 }
-                            }.font(.headline).foregroundColor(.white).frame(maxWidth: .infinity).padding().background(RoundedRectangle(cornerRadius: 12).fill(.blue)).disabled(isScheduling)
-                        }
-                        
-                        if !calendarService.hasFullAccess {
-                            HStack {
-                                Image(systemName: "exclamationmark.triangle").foregroundColor(.orange)
-                                Text("Calendar access needed for reminders").font(.caption).foregroundColor(.secondary)
                             }
+                            .font(.headline)
+                            .foregroundColor(.white)
+                            .frame(maxWidth: .infinity)
+                            .padding()
+                            .background(RoundedRectangle(cornerRadius: 12).fill(.blue))
+                            .disabled(isScheduling)
                         }
                     }
+                    .padding()
                 }
-                .padding()
             }
             .navigationTitle("Schedule Movie")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .navigationBarLeading) { Button("Cancel", action: onDismiss) }
             }
-            // ✅ FIX: Use the new alert system for better feedback
             .alert(item: $alertType) { type in
                 switch type {
                 case .success(let message):
@@ -110,9 +114,6 @@ struct CalendarIntegratedMovieScheduler: View {
                 case .failure(let message):
                     return Alert(title: Text("Scheduling Failed"), message: Text(message), dismissButton: .default(Text("OK")))
                 }
-            }
-            .onAppear {
-                print("🎬 ✅ CalendarIntegratedMovieScheduler appeared for: \(movie.title)")
             }
         }
     }
@@ -124,7 +125,6 @@ struct CalendarIntegratedMovieScheduler: View {
         let scheduledDate = calculateSelectedDate()
         movieService.scheduleMovie(movie.id, for: scheduledDate)
         
-        // ✅ FIX: Provide specific success and failure alerts
         let calendarSuccess = calendarService.createMovieNightEvent(for: movie, at: scheduledDate)
         
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
@@ -148,9 +148,11 @@ struct CalendarIntegratedMovieScheduler: View {
             return calendar.date(bySettingHour: 19, minute: 0, second: 0, of: tomorrow) ?? Date()
         case "This Weekend":
             let today = Date()
-            let weekday = calendar.component(.weekday, from: today)
-            let daysUntilSaturday = (7 - weekday + 1) % 7
-            let saturday = calendar.date(byAdding: .day, value: daysUntilSaturday == 0 ? 7 : daysUntilSaturday, to: today) ?? today
+            let weekday = calendar.component(.weekday, from: today) // Sunday = 1, Saturday = 7
+            // ✅ FIX 2: Corrected the date calculation logic for "This Weekend".
+            let daysUntilSaturday = (7 - weekday + 7) % 7
+            let daysToAdd = daysUntilSaturday == 0 ? 7 : daysUntilSaturday // If today is Sat, schedule for next Sat.
+            let saturday = calendar.date(byAdding: .day, value: daysToAdd, to: today) ?? today
             return calendar.date(bySettingHour: 19, minute: 0, second: 0, of: saturday) ?? Date()
         default: return selectedDate
         }
