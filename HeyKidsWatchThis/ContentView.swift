@@ -3,13 +3,47 @@
 
 import SwiftUI
 
+// MARK: - FIX 3a: Helper for Streaming Service UI
+// A helper struct to manage the name and color for each streaming service tag.
+private struct StreamingServiceStyle {
+    let name: String
+    let color: Color
+
+    init(_ serviceName: String) {
+        // Abbreviate "Amazon Prime Video" to "Amazon"
+        if serviceName.localizedStandardContains("Amazon") {
+            self.name = "Amazon"
+            self.color = .orange
+        } else if serviceName.localizedStandardContains("Netflix") {
+            self.name = "Netflix"
+            self.color = .red
+        } else if serviceName.localizedStandardContains("Disney") {
+            self.name = "Disney+"
+            self.color = .blue
+        } else if serviceName.localizedStandardContains("Hulu") {
+            self.name = "Hulu"
+            self.color = .green
+        } else if serviceName.localizedStandardContains("Max") {
+            self.name = "Max"
+            self.color = .purple
+        }
+        else {
+            self.name = serviceName
+            self.color = .secondary
+        }
+    }
+}
+
+
 struct ContentView: View {
     @Environment(MovieService.self) private var movieService
     @Environment(NavigationManager.self) private var navigationManager
-    @State private var selectedTab: AppTab = .movies
+    
+    // FIX 1: The local @State for selectedTab has been removed.
+    // The TabView now correctly binds to the selectedTab in the NavigationManager.
     
     var body: some View {
-        TabView(selection: $selectedTab) {
+        TabView(selection: $navigationManager.selectedTab) {
             // Movies Tab
             MoviesTabView()
                 .tabItem {
@@ -39,9 +73,9 @@ struct ContentView: View {
                 .tag(AppTab.settings)
         }
         .onAppear {
-            print("🎬 ContentView appeared")
-            print("🎬 Movies available: \(movieService.getAllMovies().count)")
-            print("🎬 Watchlist count: \(movieService.watchlist.count)")
+            print("ContentView appeared")
+            print("Movies available: \(movieService.getAllMovies().count)")
+            print("Watchlist count: \(movieService.watchlist.count)")
         }
     }
 }
@@ -146,48 +180,67 @@ struct SimpleMovieRow: View {
     let onMarkWatched: () -> Void
     
     var body: some View {
-        HStack {
+        HStack(spacing: 12) {
             // Movie emoji
             Text(movie.emoji)
-                .font(.title2)
+                .font(.title)
+                .frame(width: 40)
             
             // Movie details
-            VStack(alignment: .leading, spacing: 4) {
+            VStack(alignment: .leading, spacing: 6) {
                 Text(movie.title)
                     .font(.headline)
                     .foregroundColor(isWatched ? .secondary : .primary)
                 
-                Text("\(movie.year) • \(movie.ageGroup.rawValue)")
+                // FIX 2: Using String(movie.year) prevents the comma from appearing.
+                // Using .description for AgeGroup provides a friendlier format.
+                Text("\(String(movie.year)) • \(movie.ageGroup.description)")
                     .font(.caption)
                     .foregroundColor(.secondary)
                 
-                Text(movie.genre)
-                    .font(.caption)
-                    .padding(.horizontal, 8)
-                    .padding(.vertical, 2)
-                    .background(Color.blue.opacity(0.1))
-                    .cornerRadius(4)
+                // FIX 3b: Re-added the ForEach loop to display streaming service tags.
+                HStack {
+                    Text(movie.genre)
+                        .font(.caption2)
+                        .padding(.horizontal, 6)
+                        .padding(.vertical, 2)
+                        .background(Color.gray.opacity(0.15))
+                        .cornerRadius(4)
+
+                    ForEach(movie.streamingServices, id: \.self) { serviceName in
+                        let style = StreamingServiceStyle(serviceName)
+                        Text(style.name)
+                            .font(.caption2).bold()
+                            .padding(.horizontal, 6)
+                            .padding(.vertical, 2)
+                            .background(style.color.opacity(0.15))
+                            .foregroundColor(style.color)
+                            .cornerRadius(4)
+                    }
+                }
             }
             
             Spacer()
             
             // Action buttons
-            VStack(spacing: 8) {
+            HStack(spacing: 15) {
                 Button(action: onWatchlistToggle) {
                     Image(systemName: isInWatchlist ? "heart.fill" : "heart")
                         .foregroundColor(isInWatchlist ? .red : .gray)
+                        .font(.title2)
                 }
                 .buttonStyle(.plain)
                 
                 Button(action: onMarkWatched) {
                     Image(systemName: isWatched ? "checkmark.circle.fill" : "circle")
                         .foregroundColor(isWatched ? .green : .gray)
+                        .font(.title2)
                 }
                 .buttonStyle(.plain)
                 .disabled(isWatched)
             }
         }
-        .padding(.vertical, 4)
+        .padding(.vertical, 8)
     }
 }
 
