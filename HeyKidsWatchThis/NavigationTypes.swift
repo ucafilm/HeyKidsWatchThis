@@ -1,5 +1,5 @@
-// NavigationTypes.swift - SURGICAL FIX
-// Essential navigation types for HeyKidsWatchThis
+// NavigationTypes.swift - FINAL FIXED VERSION
+// Central location for all navigation and alert types to prevent duplicates.
 
 import Foundation
 
@@ -25,13 +25,33 @@ enum AppTab: String, CaseIterable {
     }
 }
 
-// MARK: - Navigation State (FIXED - Added Hashable conformance)
+// MARK: - Navigation State
 
 enum NavigationRoute: Hashable {
-    case movieDetail(UUID)  // Use UUID instead of MovieData for Hashable
-    case memoryDetail(UUID)  // Use UUID instead of MemoryData for Hashable
-    case createMemory(UUID)  // Use UUID instead of MovieData for Hashable
+    case movieDetail(UUID)
+    case memoryDetail(UUID)
+    case createMemory(UUID)
     case settings
+}
+
+// MARK: - FIX: Centralized Scheduler Alert Type
+
+// This enum is now defined only here to be shared across the app.
+enum SchedulerAlertType: Identifiable {
+    case success(String)
+    case failure(String)
     
-    // Hashable conformance is automatic for enums with Hashable associated values
+    var id: String {
+        switch self {
+        case .success(let message): return "success-\(message)"
+        case .failure(let message): return "failure-\(message)"
+        }
+    }
+    
+    var message: String {
+        switch self {
+        case .success(let msg): return msg
+        case .failure(let msg): return msg
+        }
+    }
 }
